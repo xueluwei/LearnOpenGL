@@ -1,0 +1,16 @@
+*.iml
+.gradle
+.idea
+*/build
+build
+local.properties
+/app/google-services.json
+/app/release
+/app/debug
+/app/mapping.txt
+distribute-app.json
+keystore
+keystore.jks
+keystore.properties
+/doc/*.c
+*/.cxx
