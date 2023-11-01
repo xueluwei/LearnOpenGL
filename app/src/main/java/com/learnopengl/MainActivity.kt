@@ -1,26 +1,26 @@
 package com.learnopengl
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import androidx.activity.compose.setContent
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.viewinterop.AndroidView
-import com.learnopengl.code.MyGLSurfaceView
+import androidx.appcompat.app.AppCompatActivity
+import com.learnopengl.nativecode.NativeGLSurfaceView
 
 class MainActivity : AppCompatActivity() {
+    private var openglView: NativeGLSurfaceView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            MainView()
-        }
+        openglView = NativeGLSurfaceView(this)
+        setContentView(openglView)
     }
 
-    @Composable
-    fun MainView() {
-        AndroidView({
-            MyGLSurfaceView(it)
-        })
+    override fun onPause() {
+        super.onPause()
+        openglView?.onPause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        openglView?.onResume()
     }
 
 }

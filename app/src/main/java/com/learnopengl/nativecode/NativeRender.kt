@@ -1,20 +1,31 @@
 package com.learnopengl.nativecode
 
-object NativeRender {
-    init {
-        // Used to load the 'main' library on application startup.
-        System.loadLibrary("native-render")
+import android.opengl.GLSurfaceView
+import javax.microedition.khronos.egl.EGLConfig
+import javax.microedition.khronos.opengles.GL10
+
+class NativeRender: GLSurfaceView.Renderer {
+
+    companion object {
+        init {
+            // 加载C库
+            System.loadLibrary("Native")
+        }
     }
 
-    external fun native_OnInit()
+    external fun init(width: Int, height: Int)
 
-    external fun native_OnUnInit()
+    external fun setup()
 
-    external fun native_SetImageData(format: Int, width: Int, height: Int, bytes: ByteArray?)
+    override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
 
-    external fun native_OnSurfaceCreated()
+    }
 
-    external fun native_OnSurfaceChanged(width: Int, height: Int)
+    override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
+        init(width, height)
+    }
 
-    external fun native_OnDrawFrame()
+    override fun onDrawFrame(gl: GL10?) {
+        setup()
+    }
 }
