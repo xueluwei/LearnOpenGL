@@ -46,7 +46,7 @@ GLuint vPosition; // 顶点着色器的vPosition变量，在setupGraphics中初�
  * @param h
  * @return
  */
-bool setupGraphics(int w, int h)
+extern bool setupGraphics(int w, int h)
 {
     simpleTriangleProgram = createProgram(glVertexShader, glFragmentShader); // 创建好着色器程序
     if (!simpleTriangleProgram) // 确保创建成功
@@ -69,7 +69,7 @@ const GLfloat triangleVertices[] = {
 /**
  * 用于绘制渲染三角形
  */
-void renderFrame()
+extern void renderFrame()
 {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // 设置背景颜色为黑色
     glClear (GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); // 清除颜色缓冲区和深度缓冲区

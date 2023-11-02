@@ -1,5 +1,5 @@
 #include <jni.h>
-#include "include/Cube.h"
+#include "include/TextureCube.h"
 
 extern "C"
 JNIEXPORT void JNICALL

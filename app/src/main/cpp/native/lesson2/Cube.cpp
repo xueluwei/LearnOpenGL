@@ -54,11 +54,9 @@ GLint vertexColourLocation;
 GLint projectionLocation;
 GLint modelViewLocation;
 float projectionMatrix[16];
-int sWidth;
-int sHeight;
 
 // 顶点坐标
-bool setupGraphics(int width, int height)
+extern bool setupGraphics(int width, int height)
 {
     simpleCubeProgram = createProgram(glVertexShader, glFragmentShader);
     if (simpleCubeProgram == 0)
@@ -74,8 +72,6 @@ bool setupGraphics(int width, int height)
     matrixPerspective(projectionMatrix, 45, (float)width / (float)height, 0.1f, 100);
     glEnable(GL_DEPTH_TEST); // 开启深度测试，告知OpenGL ES显示时需要考虑深度
     glViewport(0, 0, width, height);
-    sWidth = width;
-    sHeight = height;
     return true;
 }
 
@@ -153,7 +149,7 @@ float angle = 0;
 float modelViewMatrix[16];
 
 // 渲染帧
-void renderFrame()
+extern void renderFrame()
 {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // 设置清屏颜色
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); // 清除深度缓冲区和颜色缓冲区

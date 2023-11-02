@@ -20,6 +20,7 @@ add_library(Utils SHARED native/util/LoadUtil.cpp native/util/CameraUtil.cpp nat
 add_library(Triangle SHARED native/lesson1/Triangle.cpp)
 add_library(Cube SHARED native/lesson2/Cube.cpp)
 add_library(TextureCube SHARED native/lesson3/TextureCube.cpp)
+add_library(Light SHARED native/lesson4/Light.cpp)
 
 # 搜索指定预定义库并存储它们的路径作为变量，因为CMake默认包含系统库在搜索路径中，所以你只需要指定要加入的NDK库的名称。
 # CMake在完成构建之前验证库是否存在。
@@ -31,7 +32,7 @@ find_library(
 # 指定CMake链接到你的目标库的库，你可以链接多个库，例如你在这个构建脚本中定义的库，预构建的第三方库或者系统库。
 target_link_libraries(
         Native # 指定目标库。
-        Cube # 链接目标库到cube库
+        TextureCube
         Utils # 链接目标库到utils库。
 )
 target_link_libraries(
@@ -43,3 +44,4 @@ target_link_libraries(
 target_link_libraries(Triangle Utils ${OPENGL_LIB} EGL)
 target_link_libraries(Cube Utils ${OPENGL_LIB} EGL)
 target_link_libraries(TextureCube Utils ${OPENGL_LIB} EGL)
+target_link_libraries(Light Utils ${OPENGL_LIB} EGL)
