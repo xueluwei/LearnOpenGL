@@ -32,7 +32,7 @@ find_library(
 # 指定CMake链接到你的目标库的库，你可以链接多个库，例如你在这个构建脚本中定义的库，预构建的第三方库或者系统库。
 target_link_libraries(
         Native # 指定目标库。
-        TextureCube
+        Light
         Utils # 链接目标库到utils库。
 )
 target_link_libraries(
