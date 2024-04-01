@@ -9,6 +9,10 @@
  * 的使用一些关于场景、灯光、材料的假设，处理时我们会一一指出。
  *
  * 我们会使用Phong反射模型，简单的解释：环境量+漫反射+镜面反射=Phong反射模型
+ *
+ * 环境量：环境光常量乘环境光强度，是个固定的量，类似于光照进物体之后会被吸收一部分，这部分是固定的，不会随着角度或视角变化
+ * 漫反射：根据光的入射角的反向向量和法线的反向向量点积计算夹角，然后乘漫反射光照常量计算光强
+ * 镜面反射：根据光的入射角和我们的视角反向的向量点积计算夹角，然后乘镜面反射光照常量计算光强
 */
 
 #include <GLES2/gl2.h>
@@ -16,38 +20,70 @@
 #include "../include/LoadUtil.h"
 #include "../include/LogUtil.h"
 
-
 // 顶点坐标，我们每个面加一个特殊的点，这样我们就可以计算出每个面的法线了
-GLfloat normals[] = { 1.0f,  1.0f, -1.0f, /* 后面 */
+GLfloat vertices[] = { 1.0f,  1.0f, -1.0f, /* 后面 */
                         -1.0f,  1.0f, -1.0f,
                         1.0f, -1.0f, -1.0f,
                         -1.0f, -1.0f, -1.0f,
-                        0.0f,  0.0f, -2.0f,
+                        0.0f,  0.0f, -1.0f,
                         -1.0f,  1.0f,  1.0f, /* 前面 */
                         1.0f,  1.0f,  1.0f,
                         -1.0f, -1.0f,  1.0f,
                         1.0f, -1.0f,  1.0f,
-                        0.0f,  0.0f,  2.0f,
+                        0.0f,  0.0f,  1.0f,
                         -1.0f,  1.0f, -1.0f, /* 左面 */
                         -1.0f,  1.0f,  1.0f,
                         -1.0f, -1.0f, -1.0f,
                         -1.0f, -1.0f,  1.0f,
-                        -2.0f,  0.0f,  0.0f,
+                        -1.0f,  0.0f,  0.0f,
                         1.0f,  1.0f,  1.0f, /* 右面 */
                         1.0f,  1.0f, -1.0f,
                         1.0f, -1.0f,  1.0f,
                         1.0f, -1.0f, -1.0f,
-                        2.0f,  0.0f,  0.0f,
+                        1.0f,  0.0f,  0.0f,
                         -1.0f, -1.0f,  1.0f, /* 下面 */
                         1.0f, -1.0f,  1.0f,
                         -1.0f, -1.0f, -1.0f,
                         1.0f, -1.0f, -1.0f,
-                        0.0f, -2.0f,  0.0f,
+                        0.0f, -1.0f,  0.0f,
                         -1.0f,  1.0f, -1.0f, /* 上面 */
                         1.0f,  1.0f, -1.0f,
                         -1.0f,  1.0f,  1.0f,
                         1.0f,  1.0f,  1.0f,
-                        0.0f,  2.0f,  0.0f
+                        0.0f,  1.0f,  0.0f
+};
+
+// 法线坐标
+GLfloat normals[] = { 1.0f,  1.0f, -1.0f, /* 后面 */
+                      -1.0f,  1.0f, -1.0f,
+                      1.0f, -1.0f, -1.0f,
+                      -1.0f, -1.0f, -1.0f,
+                      0.0f,  0.0f, -1.0f,
+                      -1.0f,  1.0f,  1.0f, /* 前面 */
+                      1.0f,  1.0f,  1.0f,
+                      -1.0f, -1.0f,  1.0f,
+                      1.0f, -1.0f,  1.0f,
+                      0.0f,  0.0f,  1.0f,
+                      -1.0f,  1.0f, -1.0f, /* 左面 */
+                      -1.0f,  1.0f,  1.0f,
+                      -1.0f, -1.0f, -1.0f,
+                      -1.0f, -1.0f,  1.0f,
+                      -1.0f,  0.0f,  0.0f,
+                      1.0f,  1.0f,  1.0f, /* 右面 */
+                      1.0f,  1.0f, -1.0f,
+                      1.0f, -1.0f,  1.0f,
+                      1.0f, -1.0f, -1.0f,
+                      1.0f,  0.0f,  0.0f,
+                      -1.0f, -1.0f,  1.0f, /* 下面 */
+                      1.0f, -1.0f,  1.0f,
+                      -1.0f, -1.0f, -1.0f,
+                      1.0f, -1.0f, -1.0f,
+                      0.0f, -1.0f,  0.0f,
+                      -1.0f,  1.0f, -1.0f, /* 上面 */
+                      1.0f,  1.0f, -1.0f,
+                      -1.0f,  1.0f,  1.0f,
+                      1.0f,  1.0f,  1.0f,
+                      0.0f,  1.0f,  0.0f
 };
 
 // 顶点颜色
@@ -83,7 +119,7 @@ GLfloat colour[] = {1.0f, 0.0f, 0.0f, /* 后面 */
                     1.0f, 0.0f, 1.0f
 };
 
-// 顶点法线
+// 每个面绘制的三角形（本来一个面2个三角，但是加上法线后的点，每个面就要画4个三角形）
 GLushort indices[] = {0,  2,  4,/* 后面 */
                       0,  4,  1,
                       1,  4,  3,
@@ -114,7 +150,7 @@ GLushort indices[] = {0,  2,  4,/* 后面 */
 // 下面是cube绘制
 // 顶点着色器
 static const char  glVertexShader[] =
-        "attribute vec3 vertexNormal;\n"
+        "attribute vec3 vertexNormal;\n" // 顶点法线
         "attribute vec4 vertexPosition;\n" // 顶点坐标
         "attribute vec3 vertexColour;\n" // 顶点颜色
         "varying vec3 fragColour;\n" // 用于传递给片段着色器颜色（varying用于传递属性给片段着色器）
@@ -122,8 +158,25 @@ static const char  glVertexShader[] =
         "uniform mat4 modelView;\n" // 模型矩阵
         "void main()\n"
         "{\n"
+        "    vec3 transformedVertexNormal = normalize((modelView * vec4(vertexNormal, 0.0)).xyz);" // 用模型矩阵来转换顶点法线
+        "    vec3 inverseLightDirection = normalize(vec3(0.0, 1.0, 1.0));\n" // 入射光反转（我们需要一个往外发散的向量表示反射出的光的向量）
+        "    fragColour = vec3(0.0);\n" // 初始化颜色，后续根据光照各种反射模型来累加
+        "    vec3 diffuseLightIntensity = vec3(1.0, 1.0, 1.0);\n" // 漫反射光强度初始化（这个例子中用的白光）
+        "    vec3 vertexDiffuseReflectionConstant = vertexColour;\n" // 表示漫反射光的颜色常量
+        "    float normalDotLight = max(0.0, dot(transformedVertexNormal, inverseLightDirection));\n" // 点乘计算出法线和光线的夹角，cos值，和0.0做max方法过滤掉负值（反射光在背面的值）
+        "    fragColour += normalDotLight * vertexDiffuseReflectionConstant * diffuseLightIntensity;\n" // 角度*颜色常量*强度，得到漫反射光的颜色，累加到块颜色中
+        "    vec3 ambientLightIntensity = vec3(0.1, 0.1, 0.1);\n" // 环境光强度初始化
+        "    vec3 vertexAmbientReflectionConstant = vertexColour;\n" // 表示环境光的颜色常量，这个例子中用vertexColour简单表示，通常这个值需要单独指定颜色
+        "    fragColour += vertexAmbientReflectionConstant * ambientLightIntensity;\n" // 环境光颜色*环境光强度，得到环境光的颜色，累加到块颜色中，这个颜色是统一的，不会随着角度或视角变化
+        "    vec3 inverseEyeDirection = normalize(vec3(0.0, 0.0, 1.0));\n" // 反转后的视角方向，这个例子简单使用了一个固定的视角，通常这个值需要根据相机矩阵计算
+        "    vec3 specularLightIntensity = vec3(1.0, 1.0, 1.0);\n" // 镜面反射光强度
+        "    vec3 vertexSpecularReflectionConstant = vec3(1.0, 1.0, 1.0);\n" // 镜面反射光的颜色常量，这里不像上面环境光和漫反射光一样用顶点颜色，而是用白光，因为反射到视角中的光是白光
+        "    float shininess = 2.0;\n" // 指数，用于计算镜面反射光的强度，因为我们点积的值都是0-1之间的，所以这个值越大（反射的向量与视角的夹角越大），镜面反射光的结果越小
+        "    vec3 lightReflectionDirection = reflect(vec3(0) - inverseLightDirection, transformedVertexNormal);\n" // 使用reflect接口计算反射光的方向
+        "    float normalDotReflection = max(0.0, dot(inverseEyeDirection, lightReflectionDirection));\n" // 点积计算反射光和视角的夹角
+        "    fragColour += pow(normalDotReflection, shininess) * vertexSpecularReflectionConstant * specularLightIntensity;\n" // 角度*颜色常量*强度，得到镜面反射光的颜色，累加到块颜色中
+        "    clamp(fragColour, 0.0, 1.0);\n" // 确保颜色在0-1之间
         "    gl_Position = projection * modelView * vertexPosition;\n" // GL坐标设置成投影矩阵和模型视图矩阵的乘积
-        "    fragColour = vertexColour;\n" // 传递颜色给片段着色器
         "}\n";
 
 // 块着色器
@@ -135,8 +188,9 @@ static const char  glFragmentShader[] =
         "    gl_FragColor = vec4(fragColour, 1.0);\n" // 设置颜色（1.0设置的是透明属性）
         "}\n";
 
-GLuint simpleCubeProgram;
-GLint vertexNormalLocation;
+GLuint lightProgram;
+GLint vertexLocation;
+GLint vertexNormalLocation; // 顶点法线缓存
 GLint vertexColourLocation;
 GLint projectionLocation;
 GLint modelViewLocation;
@@ -145,16 +199,17 @@ float projectionMatrix[16];
 // 顶点坐标
 extern bool setupGraphics(int width, int height)
 {
-    simpleCubeProgram = createProgram(glVertexShader, glFragmentShader);
-    if (simpleCubeProgram == 0)
+    lightProgram = createProgram(glVertexShader, glFragmentShader);
+    if (lightProgram == 0)
     {
         LOGE ("Could not create program");
         return false;
     }
-    vertexNormalLocation = glGetAttribLocation(simpleCubeProgram, "vertexNormal"); // 获取顶点坐标
-    vertexColourLocation = glGetAttribLocation(simpleCubeProgram, "vertexColour"); // 获取顶点颜色
-    projectionLocation = glGetUniformLocation(simpleCubeProgram, "projection"); // 获取投影矩阵
-    modelViewLocation = glGetUniformLocation(simpleCubeProgram, "modelView"); // 获取模型视图矩阵
+    vertexLocation = glGetAttribLocation(lightProgram, "vertexPosition"); // 获取顶点坐标
+    vertexColourLocation = glGetAttribLocation(lightProgram, "vertexColour"); // 获取顶点颜色
+    vertexNormalLocation = glGetAttribLocation(lightProgram, "vertexNormal"); // 获取顶点法线坐标
+    projectionLocation = glGetUniformLocation(lightProgram, "projection"); // 获取投影矩阵
+    modelViewLocation = glGetUniformLocation(lightProgram, "modelView"); // 获取模型视图矩阵
     matrixPerspective(projectionMatrix, 45, (float)width / (float)height, 0.1f, 100);
     glEnable(GL_DEPTH_TEST); // 开启深度测试，告知OpenGL ES显示时需要考虑深度
     glViewport(0, 0, width, height);
@@ -173,11 +228,13 @@ extern void renderFrame()
     matrixRotateX(modelViewMatrix, angle); // 沿X轴旋转
     matrixRotateY(modelViewMatrix, angle); // 沿Y轴旋转
     matrixTranslate(modelViewMatrix, 0.0f, 0.0f, -10.0f); // 往Z轴负方向移动10个单位，防止画面太近看不到
-    glUseProgram(simpleCubeProgram); // 使用程序
-    glVertexAttribPointer(vertexNormalLocation, 3, GL_FLOAT, GL_FALSE, 0, normals); // 顶点坐标
-    glEnableVertexAttribArray(vertexNormalLocation); // 启用顶点坐标
+    glUseProgram(lightProgram); // 使用程序
+    glVertexAttribPointer(vertexLocation, 3, GL_FLOAT, GL_FALSE, 0, vertices); // 顶点坐标
+    glEnableVertexAttribArray(vertexLocation); // 启用顶点坐标
     glVertexAttribPointer(vertexColourLocation, 3, GL_FLOAT, GL_FALSE, 0, colour); // 顶点颜色
     glEnableVertexAttribArray(vertexColourLocation); // 启用顶点颜色
+    glVertexAttribPointer(vertexNormalLocation, 3, GL_FLOAT, GL_FALSE, 0, normals); // 法线坐标
+    glEnableVertexAttribArray(vertexNormalLocation); // 启用顶点法线坐标
     glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projectionMatrix); // 投影矩阵
     glUniformMatrix4fv(modelViewLocation, 1, GL_FALSE, modelViewMatrix); // 模型视图矩阵
     glDrawElements(GL_TRIANGLES, 72, GL_UNSIGNED_SHORT, indices); // 绘制
